@@ -2,7 +2,9 @@ package ch.bbcag.bbcspaceinvader.gui.scenes;
 
 import ch.bbcag.bbcspaceinvader.common.KeyControllable;
 import ch.bbcag.bbcspaceinvader.gameobject.objects.*;
+import ch.bbcag.bbcspaceinvader.gui.Navigator;
 import ch.bbcag.bbcspaceinvader.gui.scenes.LoseScene;
+import ch.bbcag.bbcspaceinvader.gameobject.objects.Spaceship;
 import ch.bbcag.bbcspaceinvader.common.KeyEventHandler;
 import ch.bbcag.bbcspaceinvader.gameobject.objects.Lootdrop;
 import javafx.animation.AnimationTimer;
@@ -13,9 +15,13 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.geometry.BoundingBox;
 
+import java.lang.invoke.LambdaMetafactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -28,6 +34,8 @@ public class GameScene implements KeyControllable {
     private static final double SPEED_OF_SPACESHIP = 100;
 
     private long lastTimeInNanoSec;
+    private Navigator navigator;
+    private int wave = 1;
     private Canvas canvas;
     private GraphicsContext gc;
     private Image gameBackground = new Image(GameScene.class.getResourceAsStream("/background_game.png"));
@@ -38,6 +46,8 @@ public class GameScene implements KeyControllable {
     private List<Bomb> bombs = new CopyOnWriteArrayList<>();
     private List<Laser> laserShots = new ArrayList<>();
     private List<Lootdrop> lootdrops = new ArrayList<>();
+    private List<Lootdropitem> lootdropsitem = new ArrayList<>();
+    private List<Healthdrop> healthdrops = new ArrayList<>();
     private double shipBattery = 0;
     private Spaceship spaceship;
 
@@ -45,11 +55,14 @@ public class GameScene implements KeyControllable {
     private Scene gameScene;
     private Scene loseScene;
     private LoseScene loseSceneObject;
+    private int cooldown = 1;
 
     public GameScene(Stage stage) {
         this.stage = stage;
-        loseSceneObject = new LoseScene();
+        this.navigator = new Navigator(stage);
+        loseSceneObject = new LoseScene(navigator);
     }
+
 
     public void initialize() {
         Group root = new Group();
@@ -86,10 +99,21 @@ public class GameScene implements KeyControllable {
             }
         };
 
-        alienFleet.add(new Alienship(300, 40, bombs, lootdrops));
-        alienFleet.add(new Alienship(500, 40, bombs, lootdrops));
+        alienFleet.add(new Alienship(300, 40, bombs, lootdrops, lootdropsitem));
+        alienFleet.add(new Alienship(500, 40, bombs, lootdrops, lootdropsitem));
 
         animationTimer.start();
+    }
+
+    private void initializeWave() {
+        double alienSpeed = 100 + 20 * wave;
+        int numberOfAliens = 2 + wave;
+
+        alienFleet.clear();
+
+        for (int i = 0; i < numberOfAliens; i++) {
+            alienFleet.add(new Alienship(300 + i * 200, 40, bombs, lootdrops, lootdropsitem));
+        }
     }
 
     @Override
@@ -127,9 +151,19 @@ public class GameScene implements KeyControllable {
         if (isRightKeyPressed && spaceship.getX() < 700)
             spaceship.setX(spaceship.getX() + distanceToMove);
 
-        if (isSpaceKeyPressed && isShipBatteryFull(deltaInSec)) {
+        if (isSpaceKeyPressed && isShipBatteryFull(deltaInSec) && spaceship.AMMO > 0) {
             laserShots.add(new Laser(spaceship.getX() + spaceship.getImage().getWidth() / 2, 395));
             shipBattery -= 1;
+            if (spaceship.AMMO > 0){
+            spaceship.AMMO -= 1;
+            }
+            if (spaceship.AMMO == 0){
+                cooldown = 1;
+            }
+
+        }
+        if (spaceship.AMMO < 1){
+            System.out.println("out of ammo");
         }
 
         for (Alienship alien : alienFleet) {
@@ -145,6 +179,18 @@ public class GameScene implements KeyControllable {
         }
         for (Lootdrop lootdrop : lootdrops) {
             lootdrop.update(deltaInSec);
+        }
+        for (Lootdropitem lootdropitem : lootdropsitem) {
+            lootdropitem.update(deltaInSec);
+        }
+
+        for (Healthdrop healthdrop : healthdrops) {
+            healthdrop.update(deltaInSec);
+        }
+
+        if (alienFleet.isEmpty()) {
+            wave++;
+            initializeWave();
         }
     }
 
@@ -170,24 +216,43 @@ public class GameScene implements KeyControllable {
         }
 
         for (Bomb bomb : bombs) {
-            if (bomb.collidesWith(new BoundingBox(spaceship.getX(), 400, spaceship.getImage().getWidth(), spaceship.getImage().getHeight()))) {
-                switchToLoseScene();
+            if (bomb.collidesWith(new BoundingBox(spaceship.getX(), spaceship.getY(), spaceship.getImage().getWidth() - 5, spaceship.getImage().getHeight() -5))) {
+                spaceship.takeDamage(45);
+                bombs.remove(bomb);
+
+                if (spaceship.getHealth() <= 0) {
+                    switchToLoseScene();
+                }
             }
         }
 
         for (Lootdrop lootdrop : lootdrops) {
             if (lootdrop.collidesWith(new BoundingBox(spaceship.getX(), 400, spaceship.getImage().getWidth(), spaceship.getImage().getHeight()))) {
-                //give item
+                spaceship.AMMO = 5;
+                lootdrops.remove(lootdrop);
+            }
+        }
+        for (Lootdropitem lootdropitem : lootdropsitem) {
+            if (lootdropitem.collidesWith(new BoundingBox(spaceship.getX(), 400, spaceship.getImage().getWidth(), spaceship.getImage().getHeight()))) {
+                spaceship.AMMO = 999;
+                cooldown = 10;
+                lootdropsitem.remove(lootdropitem);
+            }
+        }
+        for (Healthdrop healthdrop : healthdrops) {
+            if (healthdrop.collidesWith(new BoundingBox(spaceship.getX(), 400, spaceship.getImage().getWidth(), spaceship.getImage().getHeight()))){
+                spaceship.setHealth(100);
+                healthdrops.remove(healthdrop);
             }
         }
     }
 
     private void switchToLoseScene() {
-        stage.setScene(loseScene);
+        navigator.switchTo(loseScene);
     }
 
     private boolean isShipBatteryFull(double deltaInSec) {
-        return shipBattery > 1;
+        return shipBattery > cooldown;
     }
 
     private void paint() {
@@ -206,6 +271,43 @@ public class GameScene implements KeyControllable {
         for (Bomb bomb : bombs) {
             bomb.draw(gc);
         }
+
+        for (Lootdrop lootdrop : lootdrops){
+            lootdrop.draw(gc);
+        }
+        for (Lootdropitem lootdropitem : lootdropsitem){
+            lootdropitem.draw(gc);
+        }
+
+        for (Healthdrop healthdrop : healthdrops) {
+            healthdrop.draw(gc);
+        }
+
+        String ammoLabel = "Ammo: " + spaceship.AMMO;
+        String waveLabel = "Wave: " + wave;
+
+        double healthPrecentage = spaceship.getHealth() / 100.0;
+        double healthBarWidth = spaceship.getImage().getWidth() * healthPrecentage;
+        double healthbarHeight = 10;
+        double healthBarX = spaceship.getX();
+        double healthBarY = spaceship.getY() + spaceship.getImage().getHeight() + 5;
+
+        double redHealthBarWidth = spaceship.getImage().getWidth();
+        double redHealthBarHeight = 10;
+        double redHealthBarX = spaceship.getX();
+        double redHealthBarY = spaceship.getY() + spaceship.getImage().getHeight() + 5;
+
+        gc.setFill(Color.RED);
+        gc.fillRect(redHealthBarX, redHealthBarY, redHealthBarWidth, redHealthBarHeight);
+
+        gc.setFill(Color.GREEN);
+        gc.fillRect(healthBarX, healthBarY, healthBarWidth, healthbarHeight);
+
+        gc.setFill(Color.WHITE);
+        gc.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+
+        gc.fillText(ammoLabel, SCREEN_WIDTH - 130, SCREEN_HEIGHT - 20);
+        gc.fillText(waveLabel, SCREEN_WIDTH - 130, SCREEN_HEIGHT - 50);
     }
 
     public Scene getScene() {

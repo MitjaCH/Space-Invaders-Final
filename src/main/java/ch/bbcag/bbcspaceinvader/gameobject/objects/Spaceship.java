@@ -3,10 +3,13 @@ package ch.bbcag.bbcspaceinvader.gameobject.objects;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import ch.bbcag.bbcspaceinvader.gameobject.GameObject;
+import ch.bbcag.bbcspaceinvader.gui.scenes.GameScene;
 
 public class Spaceship extends GameObject {
 
     public static final double SPEED = 200;
+    private int health = 100;
+    public double AMMO = 10;
 
     public Spaceship(double x, double y, Image image) {
         super(x, y, image);
@@ -44,5 +47,19 @@ public class Spaceship extends GameObject {
         y = newY;
     }
 
-    // Additional methods or properties specific to Spaceship
+    public void takeDamage(int damage) {
+        health -= damage;
+        if (health <= 0){
+            System.out.println("Spaceship Destroyed!");
+
+        }
+    }
+
+    public int getHealth() {
+        return health;
+    }
+
+    public void setHealth(int health) {
+        this.health = health;
+    }
 }

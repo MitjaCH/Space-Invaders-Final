@@ -21,7 +21,7 @@ public abstract class GameObject {
     public abstract void draw(GraphicsContext gc);
 
     public BoundingBox getBoundingBox() {
-        return new BoundingBox(x, y, image.getWidth(), image.getHeight());
+        return new BoundingBox(x, y, image.getWidth() - 2, image.getHeight() - 2);
     }
 
     // Getter and Setter for x

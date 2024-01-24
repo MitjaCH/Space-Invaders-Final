@@ -19,11 +19,13 @@ public class Alienship extends GameObject {
     private EnumDirections currentDirection = EnumDirections.RIGHT;
     private List<Bomb> bombs;
     private List<Lootdrop> lootdrops;
+    private List<Lootdropitem> lootdropsitem;
 
-    public Alienship(double x, double y, List<Bomb> bombs, List<Lootdrop> lootdrops) {
+    public Alienship(double x, double y, List<Bomb> bombs, List<Lootdrop> lootdrops, List<Lootdropitem> lootdropsitem) {
         super(x, y, new Image(Alienship.class.getResourceAsStream("/alienship.png")));
         this.bombs = bombs;
         this.lootdrops = lootdrops;
+        this.lootdropsitem = lootdropsitem;
     }
 
     @Override
@@ -33,7 +35,9 @@ public class Alienship extends GameObject {
         }
         if (isBatteryFull2()) {
             dropLootdrop();
-            System.out.println("lootdrop dropped");
+        }
+        if (isBatteryFull3()){
+            dropLootdropitem();
         }
 
         changeDirectionIfRequired();
@@ -43,10 +47,12 @@ public class Alienship extends GameObject {
     private void throwBomb() {
         bombs.add(new Bomb(getX() + getImage().getWidth() / 2, getY() + getImage().getHeight()));
     }
-    private void dropLootdrop() {
+    public void dropLootdrop() {
         lootdrops.add(new Lootdrop(getX() + getImage().getWidth() / 2, getY() + getImage().getHeight()));
     }
-
+    public void dropLootdropitem() {
+        lootdropsitem.add(new Lootdropitem(getX() + getImage().getWidth() / 2, getY() + getImage().getHeight()));
+    }
 
     @Override
     public void draw(GraphicsContext gc) {
@@ -71,13 +77,18 @@ public class Alienship extends GameObject {
     }
 
     public BoundingBox getBoundingBox() {
-        return new BoundingBox(getX(), getY(), getImage().getWidth(), getImage().getHeight());
+        return new BoundingBox(getX(), getY(), getImage().getWidth() - 10, getImage().getHeight() - 10);
     }
 
     private boolean isBatteryFull() {
-        return Math.random() < 0.01;
+        return Math.random() < 0.005;
     }
-    private boolean isBatteryFull2() {
-        return Math.random() < 0.1;
+    private boolean isBatteryFull2(){
+        return Math.random() < 0.00052;
     }
+
+    private boolean isBatteryFull3(){
+        return Math.random() < 0.00015;
+    }
+
 }
