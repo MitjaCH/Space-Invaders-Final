@@ -1,0 +1,42 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
+}
+
+group = 'bbcspaceinvaders'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.9.1')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+mainClassName = 'ch.bbcag.bbcspaceinvader.game.BbcSpaceInvader'
+
+javafx {
+    modules = [ 'javafx.controls', 'javafx.media', 'javafx.graphics']
+}
+
+test {
+    useJUnitPlatform()
+}
+jar {
+    duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
+
+    manifest{
+        attributes 'Main-Class': 'ch.bbcag.Launcher'
+    }
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+javafx {
+    modules = [ 'javafx.controls', 'javafx.media', 'javafx.graphics']
+}
