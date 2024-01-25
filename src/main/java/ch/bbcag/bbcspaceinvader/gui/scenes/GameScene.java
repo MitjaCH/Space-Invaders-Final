@@ -8,10 +8,12 @@ import ch.bbcag.bbcspaceinvader.gameobject.objects.Spaceship;
 import ch.bbcag.bbcspaceinvader.common.KeyEventHandler;
 import ch.bbcag.bbcspaceinvader.gameobject.objects.Lootdrop;
 import javafx.animation.AnimationTimer;
+import javafx.application.Platform;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -42,12 +44,14 @@ public class GameScene implements KeyControllable {
     private boolean isLeftKeyPressed = false;
     private boolean isRightKeyPressed = false;
     private boolean isSpaceKeyPressed = false;
+    private boolean isXKeyPressed = false;
     private List<Alienship> alienFleet = new CopyOnWriteArrayList<>();
     private List<Bomb> bombs = new CopyOnWriteArrayList<>();
     private List<Laser> laserShots = new ArrayList<>();
     private List<Lootdrop> lootdrops = new CopyOnWriteArrayList<>();
-    private List<Lootdropitem> lootdropsitem = new CopyOnWriteArrayList<>();
+    private List<Minigundrop> lootdropsitem = new CopyOnWriteArrayList<>();
     private List<Healthdrop> healthdrops = new CopyOnWriteArrayList<>();
+    private List<Shielddrop> shielddrops = new CopyOnWriteArrayList<>();
     private String notificationMessage = "";
     private double notificationTimer = 0.0;
     private static final double NOTIFICATION_DISPLAY_TIME = 3.0;
@@ -61,6 +65,9 @@ public class GameScene implements KeyControllable {
     private double cooldown = 1;
     private boolean gameOver = false;
     private boolean minigun = false;
+    private int frameCount = 0;
+    private long lastFPSTime;
+    private double fps;
     private Stage primaryStage;
     public GameScene(Stage stage) {
         this.stage = stage;
@@ -86,6 +93,9 @@ public class GameScene implements KeyControllable {
         gameScene.setOnKeyPressed(new KeyEventHandler(this));
         gameScene.setOnKeyReleased(this::onKeyReleased);
 
+        lastTimeInNanoSec = System.nanoTime();
+        lastFPSTime = System.nanoTime();
+
         stage.setTitle("Bbc SpaceInvader");
         stage.setScene(gameScene);
         stage.show();
@@ -105,8 +115,10 @@ public class GameScene implements KeyControllable {
             }
         };
 
-        alienFleet.add(new Alienship(300, 40, bombs, lootdrops, lootdropsitem, healthdrops));
-        alienFleet.add(new Alienship(500, 40, bombs, lootdrops, lootdropsitem, healthdrops));
+
+
+        alienFleet.add(new Alienship(300, 40, bombs, lootdrops, lootdropsitem, healthdrops, shielddrops));
+        alienFleet.add(new Alienship(500, 40, bombs, lootdrops, lootdropsitem, healthdrops, shielddrops));
 
         animationTimer.start();
     }
@@ -123,7 +135,7 @@ public class GameScene implements KeyControllable {
         alienFleet.clear();
 
         for (int i = 0; i < numberOfAliens; i++) {
-            alienFleet.add(new Alienship(alienX, 40, bombs, lootdrops, lootdropsitem, healthdrops));
+            alienFleet.add(new Alienship(alienX, 40, bombs, lootdrops, lootdropsitem, healthdrops, shielddrops));
             alienX += alienSpacing;
         }
     }
@@ -143,6 +155,11 @@ public class GameScene implements KeyControllable {
         isSpaceKeyPressed = pressed;
     }
 
+    @Override
+    public void setXKeyPressed(boolean pressed) {
+        isXKeyPressed = pressed;
+    }
+
     private void onKeyReleased(KeyEvent e) {
         if (e.getCode() == KeyCode.LEFT)
             isLeftKeyPressed = false;
@@ -150,6 +167,8 @@ public class GameScene implements KeyControllable {
             isRightKeyPressed = false;
         if (e.getCode() == KeyCode.SPACE)
             isSpaceKeyPressed = false;
+        if (e.getCode() == KeyCode.F2)
+            isXKeyPressed = false;
     }
 
     private void update(double deltaInSec) {
@@ -160,8 +179,14 @@ public class GameScene implements KeyControllable {
         if (isLeftKeyPressed && spaceship.getX() > 0)
             spaceship.setX(spaceship.getX() - distanceToMove);
 
-        if (isRightKeyPressed && spaceship.getX() < 700)
+        if (isRightKeyPressed && spaceship.getX() < 740)
             spaceship.setX(spaceship.getX() + distanceToMove);
+
+        if (isXKeyPressed) {
+            System.out.println("Key Pressed");
+            showInputDialog();
+            isXKeyPressed = false;
+        }
 
         if (isSpaceKeyPressed && isShipBatteryFull(deltaInSec) && spaceship.AMMO > 0) {
             laserShots.add(new Laser(spaceship.getX() + spaceship.getImage().getWidth() / 2, 395));
@@ -178,6 +203,7 @@ public class GameScene implements KeyControllable {
                     cooldown = 1;
                     displayNotification("Minigun is off!");
                 }
+                minigun = false;
             }
 
 
@@ -209,12 +235,15 @@ public class GameScene implements KeyControllable {
         for (Lootdrop lootdrop : lootdrops) {
             lootdrop.update(deltaInSec);
         }
-        for (Lootdropitem lootdropitem : lootdropsitem) {
+        for (Minigundrop lootdropitem : lootdropsitem) {
             lootdropitem.update(deltaInSec);
         }
 
         for (Healthdrop healthdrop : healthdrops) {
             healthdrop.update(deltaInSec);
+        }
+        for (Shielddrop shielddrop : shielddrops) {
+            shielddrop.update(deltaInSec);
         }
 
         if (alienFleet.isEmpty() && !gameOver) {
@@ -250,11 +279,23 @@ public class GameScene implements KeyControllable {
                 bombs.remove(bomb);
 
                 if (spaceship.getHealth() <= 0) {
+                    isLeftKeyPressed = false;
+                    isRightKeyPressed = false;
+                    isSpaceKeyPressed = false;
                     switchToLoseScene();
                     gameOver = true;
                 }
             }
         }
+
+        for (Shielddrop shielddrop : shielddrops) {
+            if (shielddrop.collidesWith(spaceship.getBoundingBox())) {
+                spaceship.activateShield();
+                shielddrops.remove(shielddrop);
+            }
+        }
+
+
 
         for (Lootdrop lootdrop : lootdrops) {
             if (lootdrop.collidesWith(new BoundingBox(spaceship.getX(), 400, spaceship.getImage().getWidth(), spaceship.getImage().getHeight()))) {
@@ -262,10 +303,10 @@ public class GameScene implements KeyControllable {
                 lootdrops.remove(lootdrop);
             }
         }
-        for (Lootdropitem lootdropitem : lootdropsitem) {
+        for (Minigundrop lootdropitem : lootdropsitem) {
             if (lootdropitem.collidesWith(new BoundingBox(spaceship.getX(), 400, spaceship.getImage().getWidth(), spaceship.getImage().getHeight()))) {
-                spaceship.AMMO = 300;
-                cooldown = 0.1;
+                spaceship.AMMO += 300;
+                cooldown = 0;
                 minigun = true;
                 displayNotification("Minigun Enabled!");
                 lootdropsitem.remove(lootdropitem);
@@ -277,6 +318,53 @@ public class GameScene implements KeyControllable {
                 healthdrops.remove(healthdrop);
             }
         }
+        for (Shielddrop shielddrop : shielddrops) {
+            if (shielddrop.collidesWith(new BoundingBox(spaceship.getX(), 400, spaceship.getImage().getWidth(), spaceship.getImage().getHeight()))){
+                shielddrops.remove(shielddrop);
+                //Spaceship.shield.draw();
+            }
+        }
+    }
+
+    private void showInputDialog() {
+        Platform.runLater(() -> {
+            TextInputDialog dialog = new TextInputDialog();
+            dialog.setTitle("Admin Console");
+            dialog.setHeaderText(null);
+            dialog.setContentText("Enter a Command:");
+
+            dialog.showAndWait().ifPresent(result -> {
+                if ("Kebi".equalsIgnoreCase(result.trim())) {
+                    spaceship.setHealth(1000);
+                    displayNotification("Kebab Mode enabled: Eating kebabs for more health...");
+                }
+                if ("Justin".equalsIgnoreCase(result.trim())) {
+                    spaceship.SPEED = 30;
+                    displayNotification("Justin Mode enabled: You smoked too many Cigarettes you are slower now...");
+                }
+                if ("youdontknowmeson".equalsIgnoreCase(result.trim())) {
+                    spaceship.SPEED = 1000;
+                    displayNotification("David Goggins Mode enabled: THEY DONT KNOW ME SON");
+                }
+                if ("Minigun".equalsIgnoreCase(result.trim())) {
+                    minigun = true;
+                    spaceship.AMMO = 300;
+                    displayNotification("Minigun enabled!");
+                }
+                if ("God".equalsIgnoreCase(result.trim())) {
+                    minigun = true;
+                    spaceship.AMMO = 999999999;
+                    spaceship.setHealth(999999999);
+                    displayNotification("God-mode enabled! (aka Justin)");
+                }
+                if ("Ezy Win".equalsIgnoreCase(result.trim())){
+                    wave = 64;
+                    displayNotification("Ezy Win enabled! (aka Fettsack mode)");
+                } else {
+                    System.out.println("User defined: " + result);
+                }
+            });
+        });
     }
 
     private void switchToLoseScene() {
@@ -309,12 +397,15 @@ public class GameScene implements KeyControllable {
         for (Lootdrop lootdrop : lootdrops){
             lootdrop.draw(gc);
         }
-        for (Lootdropitem lootdropitem : lootdropsitem){
+        for (Minigundrop lootdropitem : lootdropsitem){
             lootdropitem.draw(gc);
         }
 
         for (Healthdrop healthdrop : healthdrops) {
             healthdrop.draw(gc);
+        }
+        for (Shielddrop shielddrop : shielddrops) {
+            shielddrop.draw(gc);
         }
 
         String ammoLabel = "Ammo: " + spaceship.AMMO;
@@ -346,22 +437,24 @@ public class GameScene implements KeyControllable {
         gc.setFill(Color.WHITE);
         gc.setFont(Font.font("Arial", FontWeight.BOLD, 12));
 
-        String versionLabel = "Space-Invaders | VER 1.0.0 | By Mitja & Louis";
-        double versionLabelX = 10; // Adjust as needed
-        double versionLabelY = 20; // Adjust as needed
+        String versionLabel = "Space-Invaders | VER 0.1.0 | By Louis & Mitja";
+        double versionLabelX = 10;
+        double versionLabelY = 20;
+
+        String fpsLabel = "FPS: " + String.format("%.2f", fps);
+        gc.fillText(fpsLabel, SCREEN_WIDTH - 130, SCREEN_HEIGHT - 80);
 
         gc.fillText(versionLabel, versionLabelX, versionLabelY);
 
         if (!notificationMessage.isEmpty()) {
-            gc.setFill(Color.YELLOW); // Adjust color as needed
+            gc.setFill(Color.YELLOW);
             gc.setFont(Font.font("Arial", FontWeight.BOLD, 20));
 
             Text notificationText = new Text(notificationMessage);
             notificationText.setFont(gc.getFont());
 
-            // Adjust the X and Y coordinates for upper right corner
-            double notificationX = SCREEN_WIDTH - notificationText.getLayoutBounds().getWidth() - 10; // 10 is for padding
-            double notificationY = 20; // 20 is for padding
+            double notificationX = SCREEN_WIDTH - notificationText.getLayoutBounds().getWidth() - 10;
+            double notificationY = 20;
 
             gc.fillText(notificationMessage, notificationX, notificationY);
         }

@@ -19,15 +19,18 @@ public class Alienship extends GameObject {
     private EnumDirections currentDirection = EnumDirections.RIGHT;
     private List<Bomb> bombs;
     private List<Lootdrop> lootdrops;
-    private List<Lootdropitem> lootdropsitem;
+    private List<Minigundrop> lootdropsitem;
     private List<Healthdrop> healthdrops;
+    private List<Shielddrop> shielddrops;
 
-    public Alienship(double x, double y, List<Bomb> bombs, List<Lootdrop> lootdrops, List<Lootdropitem> lootdropsitem, List<Healthdrop> healthdrops) {
+
+    public Alienship(double x, double y, List<Bomb> bombs, List<Lootdrop> lootdrops, List<Minigundrop> lootdropsitem, List<Healthdrop> healthdrops, List<Shielddrop> shielddrops) {
         super(x, y, new Image(Alienship.class.getResourceAsStream("/alienship.png")));
         this.bombs = bombs;
         this.lootdrops = lootdrops;
         this.lootdropsitem = lootdropsitem;
-        this.healthdrops =healthdrops;
+        this.healthdrops = healthdrops;
+        this.shielddrops = shielddrops;
     }
 
     @Override
@@ -44,6 +47,9 @@ public class Alienship extends GameObject {
         if (isBatteryFull4()){
             dropHealingdrop();
         }
+        if (isBatteryFull4()){
+            dropShielddrop();
+        }
 
         changeDirectionIfRequired();
         moveInCurrentDirection(deltaTimeInSec);
@@ -56,10 +62,13 @@ public class Alienship extends GameObject {
         lootdrops.add(new Lootdrop(getX() + getImage().getWidth() / 2, getY() + getImage().getHeight()));
     }
     public void dropLootdropitem() {
-        lootdropsitem.add(new Lootdropitem(getX() + getImage().getWidth() / 2, getY() + getImage().getHeight()));
+        lootdropsitem.add(new Minigundrop(getX() + getImage().getWidth() / 2, getY() + getImage().getHeight()));
     }
     public void dropHealingdrop() {
         healthdrops.add(new Healthdrop(getX() + getImage().getWidth() / 2, getY() + getImage().getHeight()));
+    }
+    public void dropShielddrop() {
+        shielddrops.add(new Shielddrop(getX() + getImage().getWidth() / 2, getY() + getImage().getHeight()));
     }
 
     @Override

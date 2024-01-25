@@ -1,4 +1,3 @@
-// StartScene.java
 package ch.bbcag.bbcspaceinvader.gui.scenes;
 
 import ch.bbcag.bbcspaceinvader.gui.Navigator;
@@ -7,7 +6,6 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
-import javafx.scene.paint.Color;
 
 import static ch.bbcag.bbcspaceinvader.common.Const.SCREEN_HEIGHT;
 import static ch.bbcag.bbcspaceinvader.common.Const.SCREEN_WIDTH;
@@ -36,6 +34,13 @@ public class StartScene {
             if (e.getCode() == KeyCode.SPACE) {
                 switchToGameScene();
             }
+            if (e.getCode() == KeyCode.ESCAPE) {
+                System.out.println("Key Pressed: " + e.getCode());
+                switchToAchievements();
+            }
+            if (e.getCode() == KeyCode.Q) {
+                switchToCreditsScene();
+            }
         });
     }
 
@@ -44,6 +49,16 @@ public class StartScene {
         gameScene.initialize();
         navigator.navigateTo(gameScene.getScene());
     }
+
+    private void switchToCreditsScene() {
+        CreditsScene creditsScene = new CreditsScene(navigator);
+        navigator.navigateTo(creditsScene.getScene());
+    }
+    private void switchToAchievements() {
+        Achievements achievementsScene = new Achievements(navigator, this);
+        navigator.navigateTo(achievementsScene.getScene());
+    }
+
 
     public Scene getScene() {
         return scene;

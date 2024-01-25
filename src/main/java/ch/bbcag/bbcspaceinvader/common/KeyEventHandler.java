@@ -25,6 +25,8 @@ public class KeyEventHandler implements EventHandler<KeyEvent> {
             case SPACE:
                 keyControllable.setSpaceBarPressed(true);
                 break;
+            case X:
+                keyControllable.setXKeyPressed(true);
             default:
         }
     }

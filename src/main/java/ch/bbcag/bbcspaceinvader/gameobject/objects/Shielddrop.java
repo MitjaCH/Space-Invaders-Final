@@ -1,18 +1,16 @@
 package ch.bbcag.bbcspaceinvader.gameobject.objects;
 
+import ch.bbcag.bbcspaceinvader.gameobject.GameObject;
 import javafx.geometry.BoundingBox;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 
-import ch.bbcag.bbcspaceinvader.gameobject.GameObject;
-
-public class Lootdropitem extends GameObject {
-
+public class Shielddrop extends GameObject {
     private static final double SPEED = 50;
-    public boolean minigun = false;
+    public boolean shield = false;
 
-    public Lootdropitem(double x, double y) {
-        super(x, y, new Image(Lootdropitem.class.getResourceAsStream("/airdrop_item.png")));
+    public Shielddrop(double x, double y) {
+        super(x, y, new Image(Shielddrop.class.getResourceAsStream("/airdrop_shield.png")));
     }
 
     @Override
@@ -32,5 +30,3 @@ public class Lootdropitem extends GameObject {
 
 
 }
-
-

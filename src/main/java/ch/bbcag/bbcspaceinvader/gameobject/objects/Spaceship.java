@@ -7,9 +7,12 @@ import ch.bbcag.bbcspaceinvader.gui.scenes.GameScene;
 
 public class Spaceship extends GameObject {
 
-    public static final double SPEED = 300;
+    public static double SPEED = 300;
     private int health = 100;
+    private boolean shield = false;
+    private double shieldDuration = 5.0;
     public double AMMO = 25;
+    private Image shieldImage = new Image(GameScene.class.getResourceAsStream("/forcefield.png"));
 
     public Spaceship(double x, double y, Image image) {
         super(x, y, image);
@@ -17,14 +20,23 @@ public class Spaceship extends GameObject {
 
     @Override
     public void update(double deltaTimeInSec) {
+        if (shield) {
+            shieldDuration -= deltaTimeInSec;
+            if (shieldDuration <= 0) {
+                deactivateShield();
+            }
+        }
     }
 
     @Override
     public void draw(GraphicsContext gc) {
         gc.drawImage(image, x, y);
+
+        if (shield) {
+            gc.drawImage(shieldImage, x - 10, y - 10);
+        }
     }
 
-    // Getter methods for x and y
     public double getX() {
         return x;
     }
@@ -33,13 +45,10 @@ public class Spaceship extends GameObject {
         return y;
     }
 
-    // Getter method for the image
-
     public Image getImage() {
         return image;
     }
 
-    // Setter methods for x and y
     public void setX(double newX) {
         x = newX;
     }
@@ -49,10 +58,13 @@ public class Spaceship extends GameObject {
     }
 
     public void takeDamage(int damage) {
-        health -= damage;
-        if (health <= 0){
-            System.out.println("Spaceship Destroyed!");
+        if (shield) {
+            return;
+        }
 
+        health -= damage;
+        if (health <= 0) {
+            System.out.println("Spaceship Destroyed!");
         }
     }
 
@@ -62,5 +74,19 @@ public class Spaceship extends GameObject {
 
     public void setHealth(int health) {
         this.health = health;
+    }
+
+    public void activateShield() {
+        shield = true;
+        shieldDuration = 3;
+    }
+
+    public void deactivateShield() {
+        shield = false;
+        shieldDuration = 0;
+    }
+
+    public boolean isShieldActive() {
+        return shield;
     }
 }
