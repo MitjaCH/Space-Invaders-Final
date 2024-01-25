@@ -20,12 +20,14 @@ public class Alienship extends GameObject {
     private List<Bomb> bombs;
     private List<Lootdrop> lootdrops;
     private List<Lootdropitem> lootdropsitem;
+    private List<Healthdrop> healthdrops;
 
-    public Alienship(double x, double y, List<Bomb> bombs, List<Lootdrop> lootdrops, List<Lootdropitem> lootdropsitem) {
+    public Alienship(double x, double y, List<Bomb> bombs, List<Lootdrop> lootdrops, List<Lootdropitem> lootdropsitem, List<Healthdrop> healthdrops) {
         super(x, y, new Image(Alienship.class.getResourceAsStream("/alienship.png")));
         this.bombs = bombs;
         this.lootdrops = lootdrops;
         this.lootdropsitem = lootdropsitem;
+        this.healthdrops =healthdrops;
     }
 
     @Override
@@ -38,6 +40,9 @@ public class Alienship extends GameObject {
         }
         if (isBatteryFull3()){
             dropLootdropitem();
+        }
+        if (isBatteryFull4()){
+            dropHealingdrop();
         }
 
         changeDirectionIfRequired();
@@ -52,6 +57,9 @@ public class Alienship extends GameObject {
     }
     public void dropLootdropitem() {
         lootdropsitem.add(new Lootdropitem(getX() + getImage().getWidth() / 2, getY() + getImage().getHeight()));
+    }
+    public void dropHealingdrop() {
+        healthdrops.add(new Healthdrop(getX() + getImage().getWidth() / 2, getY() + getImage().getHeight()));
     }
 
     @Override
@@ -84,11 +92,13 @@ public class Alienship extends GameObject {
         return Math.random() < 0.005;
     }
     private boolean isBatteryFull2(){
-        return Math.random() < 0.00052;
+        return Math.random() < 0.0005999;
     }
 
     private boolean isBatteryFull3(){
         return Math.random() < 0.00015;
     }
-
+    private boolean isBatteryFull4(){
+        return Math.random() < 0.0002;
+    }
 }

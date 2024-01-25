@@ -9,7 +9,7 @@ public class Spaceship extends GameObject {
 
     public static final double SPEED = 300;
     private int health = 100;
-    public double AMMO = 10;
+    public double AMMO = 25;
 
     public Spaceship(double x, double y, Image image) {
         super(x, y, image);
@@ -34,6 +34,7 @@ public class Spaceship extends GameObject {
     }
 
     // Getter method for the image
+
     public Image getImage() {
         return image;
     }

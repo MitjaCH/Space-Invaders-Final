@@ -18,6 +18,7 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.geometry.BoundingBox;
 import ch.bbcag.bbcspaceinvader.game.BbcSpaceInvader;
@@ -44,9 +45,12 @@ public class GameScene implements KeyControllable {
     private List<Alienship> alienFleet = new CopyOnWriteArrayList<>();
     private List<Bomb> bombs = new CopyOnWriteArrayList<>();
     private List<Laser> laserShots = new ArrayList<>();
-    private List<Lootdrop> lootdrops = new ArrayList<>();
-    private List<Lootdropitem> lootdropsitem = new ArrayList<>();
-    private List<Healthdrop> healthdrops = new ArrayList<>();
+    private List<Lootdrop> lootdrops = new CopyOnWriteArrayList<>();
+    private List<Lootdropitem> lootdropsitem = new CopyOnWriteArrayList<>();
+    private List<Healthdrop> healthdrops = new CopyOnWriteArrayList<>();
+    private String notificationMessage = "";
+    private double notificationTimer = 0.0;
+    private static final double NOTIFICATION_DISPLAY_TIME = 3.0;
     private double shipBattery = 0;
     private Spaceship spaceship;
 
@@ -54,8 +58,9 @@ public class GameScene implements KeyControllable {
     private Scene gameScene;
     private Scene loseScene;
     private LoseScene loseSceneObject;
-    private int cooldown = 1;
+    private double cooldown = 1;
     private boolean gameOver = false;
+    private boolean minigun = false;
     private Stage primaryStage;
     public GameScene(Stage stage) {
         this.stage = stage;
@@ -100,8 +105,8 @@ public class GameScene implements KeyControllable {
             }
         };
 
-        alienFleet.add(new Alienship(300, 40, bombs, lootdrops, lootdropsitem));
-        alienFleet.add(new Alienship(500, 40, bombs, lootdrops, lootdropsitem));
+        alienFleet.add(new Alienship(300, 40, bombs, lootdrops, lootdropsitem, healthdrops));
+        alienFleet.add(new Alienship(500, 40, bombs, lootdrops, lootdropsitem, healthdrops));
 
         animationTimer.start();
     }
@@ -118,7 +123,7 @@ public class GameScene implements KeyControllable {
         alienFleet.clear();
 
         for (int i = 0; i < numberOfAliens; i++) {
-            alienFleet.add(new Alienship(alienX, 40, bombs, lootdrops, lootdropsitem));
+            alienFleet.add(new Alienship(alienX, 40, bombs, lootdrops, lootdropsitem, healthdrops));
             alienX += alienSpacing;
         }
     }
@@ -160,17 +165,34 @@ public class GameScene implements KeyControllable {
 
         if (isSpaceKeyPressed && isShipBatteryFull(deltaInSec) && spaceship.AMMO > 0) {
             laserShots.add(new Laser(spaceship.getX() + spaceship.getImage().getWidth() / 2, 395));
-            shipBattery -= 1;
-            if (spaceship.AMMO > 0){
-            spaceship.AMMO -= 1;
+            if (minigun == false) {
+                shipBattery = 1;
+                shipBattery -= 1;
             }
-            if (spaceship.AMMO == 0){
-                cooldown = 1;
+            if (spaceship.AMMO > 0){
+                spaceship.AMMO -= 1;
+            }
+            if (spaceship.AMMO <= 10) {
+                if (minigun = true) {
+                    minigun = false;
+                    cooldown = 1;
+                    displayNotification("Minigun is off!");
+                }
             }
 
+
+        }
+
+        if (!notificationMessage.isEmpty()) {
+            notificationTimer += deltaInSec;
+
+            if (notificationTimer >= NOTIFICATION_DISPLAY_TIME) {
+                notificationMessage = "";
+                notificationTimer = 0.0;
+            }
         }
         if (spaceship.AMMO < 1){
-            System.out.println("out of ammo");
+            displayNotification("Out of Ammo!");
         }
 
         for (Alienship alien : alienFleet) {
@@ -236,14 +258,16 @@ public class GameScene implements KeyControllable {
 
         for (Lootdrop lootdrop : lootdrops) {
             if (lootdrop.collidesWith(new BoundingBox(spaceship.getX(), 400, spaceship.getImage().getWidth(), spaceship.getImage().getHeight()))) {
-                spaceship.AMMO += 5;
+                spaceship.AMMO += 10;
                 lootdrops.remove(lootdrop);
             }
         }
         for (Lootdropitem lootdropitem : lootdropsitem) {
             if (lootdropitem.collidesWith(new BoundingBox(spaceship.getX(), 400, spaceship.getImage().getWidth(), spaceship.getImage().getHeight()))) {
-                spaceship.AMMO = 999;
-                cooldown = 10;
+                spaceship.AMMO = 300;
+                cooldown = 0.1;
+                minigun = true;
+                displayNotification("Minigun Enabled!");
                 lootdropsitem.remove(lootdropitem);
             }
         }
@@ -318,11 +342,34 @@ public class GameScene implements KeyControllable {
 
         gc.fillText(ammoLabel, SCREEN_WIDTH - 130, SCREEN_HEIGHT - 20);
         gc.fillText(waveLabel, SCREEN_WIDTH - 130, SCREEN_HEIGHT - 50);
+
+        gc.setFill(Color.WHITE);
+        gc.setFont(Font.font("Arial", FontWeight.BOLD, 12));
+
+        String versionLabel = "Space-Invaders | VER 1.0.0 | By Mitja & Louis";
+        double versionLabelX = 10; // Adjust as needed
+        double versionLabelY = 20; // Adjust as needed
+
+        gc.fillText(versionLabel, versionLabelX, versionLabelY);
+
+        if (!notificationMessage.isEmpty()) {
+            gc.setFill(Color.YELLOW); // Adjust color as needed
+            gc.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+
+            Text notificationText = new Text(notificationMessage);
+            notificationText.setFont(gc.getFont());
+
+            // Adjust the X and Y coordinates for upper right corner
+            double notificationX = SCREEN_WIDTH - notificationText.getLayoutBounds().getWidth() - 10; // 10 is for padding
+            double notificationY = 20; // 20 is for padding
+
+            gc.fillText(notificationMessage, notificationX, notificationY);
+        }
     }
 
     public void resetGame() {
         gameOver = false;
-        wave = 1;
+        wave = wave - wave;
         initializeWave();
         spaceship.setHealth(100);
         spaceship.AMMO = 10;
@@ -338,5 +385,10 @@ public class GameScene implements KeyControllable {
 
     public Scene getScene() {
         return gameScene;
+    }
+
+    private void displayNotification(String message) {
+        notificationMessage = message;
+        notificationTimer = 0.0;
     }
 }
