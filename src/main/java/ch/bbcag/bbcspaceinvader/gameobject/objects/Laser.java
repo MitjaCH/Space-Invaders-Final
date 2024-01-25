@@ -7,7 +7,7 @@ import ch.bbcag.bbcspaceinvader.gameobject.GameObject;
 
 public class Laser extends GameObject {
 
-    private static final double SPEED = 50;
+    private static final double SPEED = 200;
 
     public Laser(double x, double y) {
         super(x, y, new Image(Laser.class.getResourceAsStream("/projectile.png")));

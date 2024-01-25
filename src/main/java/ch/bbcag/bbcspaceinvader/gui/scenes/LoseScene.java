@@ -6,10 +6,6 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.scene.text.Text;
 
 import static ch.bbcag.bbcspaceinvader.common.Const.SCREEN_HEIGHT;
 import static ch.bbcag.bbcspaceinvader.common.Const.SCREEN_WIDTH;
@@ -18,9 +14,11 @@ public class LoseScene {
 
     private Scene scene;
     private Navigator navigator;
+    private GameScene gameScene; // Add reference to GameScene
 
-    public LoseScene(Navigator navigator) {
+    public LoseScene(Navigator navigator, GameScene gameScene) {
         this.navigator = navigator;
+        this.gameScene = gameScene;
         createScene();
     }
 
@@ -32,8 +30,6 @@ public class LoseScene {
         loseCanvas.getGraphicsContext2D().drawImage(loseSceneImage, 0, 0);
         loseRoot.getChildren().add(loseCanvas);
 
-        loseRoot.getChildren().addAll();
-
         scene = new Scene(loseRoot);
 
         scene.setOnKeyPressed(e -> {
@@ -43,11 +39,12 @@ public class LoseScene {
         });
     }
 
-    public Scene getScene() {
-        return scene;
+    private void switchToGameScene() {
+        gameScene.resetGame(); // Reset the game when switching to GameScene
+        navigator.navigateTo(gameScene.getScene());
     }
 
-    private void switchToGameScene() {
-        navigator.switchToGameScene();
+    public Scene getScene() {
+        return scene;
     }
 }

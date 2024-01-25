@@ -24,7 +24,6 @@ public abstract class GameObject {
         return new BoundingBox(x, y, image.getWidth() - 2, image.getHeight() - 2);
     }
 
-    // Getter and Setter for x
     public double getX() {
         return x;
     }
@@ -33,7 +32,6 @@ public abstract class GameObject {
         this.x = x;
     }
 
-    // Getter and Setter for y
     public double getY() {
         return y;
     }
@@ -42,7 +40,6 @@ public abstract class GameObject {
         this.y = y;
     }
 
-    // Getter and Setter for image
     public Image getImage() {
         return image;
     }

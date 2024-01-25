@@ -1,24 +1,32 @@
+// Navigator.java
 package ch.bbcag.bbcspaceinvader.gui;
 
-import ch.bbcag.bbcspaceinvader.gui.scenes.GameScene;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 public class Navigator {
 
-    private Stage stage;
+    private static Stage primaryStage;
+    private static Scene currentScene;
 
-    private GameScene gameScene;
-
-    public Navigator(Stage stage) {
-        this.stage = stage;
+    public static void setPrimaryStage(Stage stage) {
+        primaryStage = stage;
     }
 
-    public void switchTo(Scene scene) {
-        stage.setScene(scene);
+    public static void navigateTo(Scene scene) {
+        if (primaryStage != null) {
+            primaryStage.setScene(scene);
+            currentScene = scene;
+        } else {
+            System.out.println("Primary Stage is not Set. Call setPrimaryStage() before navigating.");
+        }
     }
 
-    public void switchToGameScene() {
-        stage.setScene(gameScene.getScene());
+    public static Scene getCurrentScene() {
+        return currentScene;
+    }
+
+    public static Stage getPrimaryStage() {
+        return primaryStage;
     }
 }

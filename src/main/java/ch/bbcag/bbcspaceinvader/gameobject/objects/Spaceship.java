@@ -7,7 +7,7 @@ import ch.bbcag.bbcspaceinvader.gui.scenes.GameScene;
 
 public class Spaceship extends GameObject {
 
-    public static final double SPEED = 200;
+    public static final double SPEED = 300;
     private int health = 100;
     public double AMMO = 10;
 
